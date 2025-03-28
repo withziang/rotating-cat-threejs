@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>rotating cat</title>
+    <style>
+      body { margin: 0; }
+      canvas { display: block; }
+    </style>
+    <!-- Load all scripts as UMD -->
+    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mui/material@5.8.0/umd/material-ui.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.21.4/babel.min.js"></script>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <div id="three-container"></div>
+
+    <script type="text/babel" data-type="module">
+      const { Button, Box} = MaterialUI;
+      const THREE = window.THREE;
+
+      let audio, audioLoader;
+      let isPlaying = false;
+
+      const App = () => {
+        const playAudio = () => {
+          if (!isPlaying || !audio) {
+            const listener = new THREE.AudioListener();
+            THREE_camera.add(listener);
+            audio = new THREE.Audio(listener);
+            audioLoader = new THREE.AudioLoader();
+            audioLoader.load('./audio.mp3', function(buffer) {
+              audio.setBuffer(buffer);
+              audio.setLoop(true);
+              audio.setVolume(0.5);
+              audio.play();
+            });
+            isPlaying = true;
+          } else {
+            audio.stop();
+            isPlaying = false;
+          }
+        };
+
+        return (
+        	<>
+        		<Box sx={{backgroundColor:'#EEEEEE', height:'5%'}} p={1}>
+	        		<Button variant="contained" color="primary" onClick={playAudio}>
+	            Play Audio
+	          	</Button>
+        		</Box>
+        	</>
+          
+        );
+      };
+
+      ReactDOM.render(<App />, document.getElementById('root'));
+
+      // Your Three.js code here (without imports, using global THREE)
+      let THREE_camera, THREE_scene, THREE_renderer, ORBIT_controls;
+      let display_object_cat;
+
+      const onWindowResize = () => {
+        THREE_camera.aspect = window.innerWidth/window.innerHeight;
+        THREE_camera.updateProjectionMatrix();
+        THREE_renderer.setSize(window.innerWidth, window.innerHeight);
+      };
+
+      const init = () => {
+        THREE_scene = new THREE.Scene();
+        THREE_scene.background = new THREE.Color(0xEEEEEE);
+        THREE_camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 1000);
+        THREE_camera.position.z = 1;
+
+        const ambientLight = new THREE.AmbientLight(0xFFFFFF, 1);
+        THREE_scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
+		    directionalLight.position.set(0, 0, 1);
+		    THREE_scene.add(directionalLight);
+
+        THREE_renderer = new THREE.WebGLRenderer();
+        THREE_renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('three-container').appendChild(THREE_renderer.domElement);
+        document.getElementById('three-container').width = '95%';  
+        
+        ORBIT_controls = new THREE.OrbitControls(THREE_camera, THREE_renderer.domElement);
+        
+        const loader = new THREE.GLTFLoader();
+        loader.load('./oiiaioooooiai_cat.glb', (gltf)=>{
+          display_object_cat = gltf.scene;
+          THREE_scene.add(display_object_cat);
+        });
+        
+        window.addEventListener('resize', onWindowResize);	
+      };
+
+      let counter = 0;
+
+      const animate = () => {
+        requestAnimationFrame(animate);
+        let increment;
+        if (Math.sin(counter) > 0){
+					increment = 0.8;
+					counter+=0.08;
+        }
+        else{
+        	increment = 0.01;
+        	counter+=0.1;
+        }
+
+        if (display_object_cat)
+          display_object_cat.rotation.y += increment; // Slower rotation
+        
+        
+
+        ORBIT_controls.update();
+        THREE_renderer.render(THREE_scene, THREE_camera);
+      };
+
+      init();
+      animate();
+    </script>
+  </body>
+</html>
